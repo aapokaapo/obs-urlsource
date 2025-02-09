@@ -53,8 +53,14 @@ void setTextCallback(const std::string &str, const output_mapping &mapping)
 		obs_data_set_string(target_settings, "input", str.c_str());
 		obs_data_set_bool(target_settings, "looping", false);
 	} else {
+		// if target source is image source - set the file path to the text
 		if (strcmp(obs_source_get_id(target), "image_source") == 0) {
-			obs_data_set_string(target_settings, "file", str.c_str());
+			// if file path has not change, do not update it
+			if (strcmp(obs_data_get_string(target_settings, "file"), str.c_str) == 0; {
+				return;
+			} else {
+				obs_data_set_string(target_settings, "file", str.c_str());
+			}
 		}
 		else {
 			// if the target source is a text source - set the text field
