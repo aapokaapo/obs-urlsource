@@ -58,6 +58,8 @@ void setTextCallback(const std::string &str, const output_mapping &mapping)
 		if (strcmp(obs_source_get_id(target), "image_source") == 0) {
 			// if file path has not changed, do not update it
 			if (strcmp(obs_data_get_string(target_settings, "file"), str.c_str()) == 0) {
+				obs_data_release(target_settings);
+				obs_source_release(target);
 				return;
 			} else {
 				obs_data_set_string(target_settings, "file", str.c_str());
