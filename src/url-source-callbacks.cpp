@@ -73,18 +73,34 @@ void setFilterCallback(const std::string &str, const output_mapping &mapping)
 	}
 
 	// Try to parse the value as different types
-	// First, try to parse as integer
-	try {
-		int int_value = std::stoi(str);
-		obs_data_set_int(filter_settings, mapping.filter_setting_name.c_str(), int_value);
-	} catch (...) {
-		// If not an integer, try double
+	// First, check for boolean string values
+	if (str == "true" || str == "TRUE" || str == "True") {
+		obs_data_set_bool(filter_settings, mapping.filter_setting_name.c_str(), true);
+	} else if (str == "false" || str == "FALSE" || str == "False") {
+		obs_data_set_bool(filter_settings, mapping.filter_setting_name.c_str(), false);
+	} else if (str.size() >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) {
+		// Check for hex color values (0xFFRRGGBB format)
 		try {
-			double double_value = std::stod(str);
-			obs_data_set_double(filter_settings, mapping.filter_setting_name.c_str(), double_value);
+			unsigned long long hex_value = std::stoull(str, nullptr, 16);
+			obs_data_set_int(filter_settings, mapping.filter_setting_name.c_str(), static_cast<long long>(hex_value));
 		} catch (...) {
-			// If not a number, treat as string
+			obs_log(LOG_ERROR, "Failed to parse hex value: %s", str.c_str());
 			obs_data_set_string(filter_settings, mapping.filter_setting_name.c_str(), str.c_str());
+		}
+	} else {
+		// Try to parse as integer
+		try {
+			int int_value = std::stoi(str);
+			obs_data_set_int(filter_settings, mapping.filter_setting_name.c_str(), int_value);
+		} catch (...) {
+			// If not an integer, try double
+			try {
+				double double_value = std::stod(str);
+				obs_data_set_double(filter_settings, mapping.filter_setting_name.c_str(), double_value);
+			} catch (...) {
+				// If not a number, treat as string
+				obs_data_set_string(filter_settings, mapping.filter_setting_name.c_str(), str.c_str());
+			}
 		}
 	}
 
