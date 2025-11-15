@@ -15,7 +15,7 @@ struct filter_enum_data {
 };
 
 // Callback to enumerate filters on a source
-static bool add_filters_to_combobox(obs_source_t *parent, obs_source_t *filter, void *param)
+static bool add_filters_to_combobox(obs_source_t *filter, void *param)
 {
 	filter_enum_data *data = static_cast<filter_enum_data *>(param);
 	const char *filter_name = obs_source_get_name(filter);
