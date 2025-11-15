@@ -5,6 +5,7 @@
 #include <obs-module.h>
 
 #include <QComboBox>
+#include <string>
 
 // Helper structure to pass data to the filter enumeration callback
 struct filter_enum_data {

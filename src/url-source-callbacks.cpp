@@ -7,6 +7,7 @@
 #include <obs-module.h>
 
 #include <mutex>
+#include <string>
 #include "ui/text-render-helper.h"
 #include <obs-frontend-api.h>
 
