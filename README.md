@@ -1,6 +1,4 @@
-# ⚠️ Stalled ⚠️ This project is not under active development
-
-## URL/API Source - Connect Anything to OBS
+# URL/API Source - Connect Anything to OBS
 
 <div align="center">
 
@@ -156,7 +154,7 @@ $ ./.github/scripts/package-macos -c Release
 
 Use the CI scripts again
 ```sh
-$ ./.github/scripts/build-linux.sh
+$ ./.github/scripts/build-ubuntu
 ```
 
 Copy the results to the standard OBS folders on Ubuntu
