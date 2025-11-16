@@ -10,6 +10,61 @@
 #include <string>
 #include "ui/text-render-helper.h"
 #include <obs-frontend-api.h>
+#include <algorithm>
+#include <cctype>
+
+static bool parse_obs_color(const std::string &str, unsigned long long &out_color)
+{
+	std::string s = str;
+
+	// Trim spaces
+	auto trim = [](std::string &v) {
+		auto not_space = [](int ch) {
+			return !std::isspace(static_cast<unsigned char>(ch));
+		};
+		v.erase(v.begin(), std::find_if(v.begin(), v.end(), not_space));
+		v.erase(std::find_if(v.rbegin(), v.rend(), not_space).base(), v.end());
+	};
+	trim(s);
+
+	// Strip leading '#'
+	if (!s.empty() && s[0] == '#')
+		s.erase(0, 1);
+
+	// If it starts with 0x / 0X, just let stoull(base=0) handle it
+	bool has_0x = s.size() > 2 && (s.rfind("0x", 0) == 0 || s.rfind("0X", 0) == 0);
+
+	try {
+		if (has_0x) {
+			// 0xAARRGGBB
+			out_color = std::stoull(s, nullptr, 0);
+			return true;
+		}
+
+		// If string is all hex digits, treat as hex (e.g. "FF00FF00")
+		bool all_hex = !s.empty() && std::all_of(s.begin(), s.end(), [](unsigned char c) {
+			return std::isxdigit(c) != 0;
+		});
+
+		if (all_hex) {
+			// Optional: if it is 6-digit RRGGBB, assume alpha = 0xFF
+			if (s.size() == 6) {
+				s = "FF" + s; // AARRGGBB
+			}
+			out_color = std::stoull(s, nullptr, 16);
+			return true;
+		}
+
+		// Fallback: try decimal (user gave 4294967295, etc.)
+		out_color = std::stoull(s, nullptr, 10);
+		return true;
+	} catch (...) {
+		return false;
+	}
+}
+
+
+
 
 void acquire_output_source_ref_by_name(const char *output_source_name, obs_source_t **output_source)
 {
@@ -72,21 +127,22 @@ void setFilterCallback(const std::string &str, const output_mapping &mapping)
 		return;
 	}
 
-	// Try to parse the value as different types
-	// First, check for boolean string values
-	if (str == "true" || str == "TRUE" || str == "True") {
-		obs_data_set_bool(filter_settings, mapping.filter_setting_name.c_str(), true);
-	} else if (str == "false" || str == "FALSE" || str == "False") {
-		obs_data_set_bool(filter_settings, mapping.filter_setting_name.c_str(), false);
-	} else if (str.size() >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) {
-		// Check for hex color values (0xFFRRGGBB format)
-		try {
-			unsigned long long hex_value = std::stoull(str, nullptr, 16);
-			obs_data_set_int(filter_settings, mapping.filter_setting_name.c_str(), static_cast<long long>(hex_value));
-		} catch (...) {
-			obs_log(LOG_ERROR, "Failed to parse hex value: %s", str.c_str());
-			obs_data_set_string(filter_settings, mapping.filter_setting_name.c_str(), str.c_str());
-		}
+
+	if (mapping.filter_setting_name == "color_multiply" ||
+			mapping.filter_setting_name == "color_add") {
+
+			unsigned long long color = 0;
+			if (!parse_obs_color(str, color)) {
+				obs_log(LOG_ERROR, "Invalid color value '%s' for %s", str.c_str(),
+					mapping.filter_setting_name.c_str());
+				obs_data_release(filter_settings);
+				obs_source_release(filter);
+				obs_source_release(source);
+				return;
+			}
+
+		obs_data_set_int(filter_settings, mapping.filter_setting_name.c_str(),
+				 static_cast<long long>(color));
 	} else {
 		// Try to parse as integer
 		try {
