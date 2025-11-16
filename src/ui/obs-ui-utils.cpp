@@ -15,13 +15,18 @@ struct filter_enum_data {
 };
 
 // Callback to enumerate filters on a source
+<<<<<<< HEAD
 static void add_filters_to_combobox(obs_source_t *parent, obs_source_t *filter, void *param)
+=======
+static bool add_filters_to_combobox(obs_source_t *filter, void *param)
+>>>>>>> 447361aee4bb23ee57e740b5b3071b51a907c7fe
 {
 	filter_enum_data *data = static_cast<filter_enum_data *>(param);
 	const char *filter_name = obs_source_get_name(filter);
 
 	// Create the filter item format: "(Source) SourceName -> FilterName"
 	std::string filter_item = data->source_prefix + data->source_name + " -> " + filter_name;
+<<<<<<< HEAD
 
 	// If comboBox is a QComboBox*, convert to QString:
 	data->comboBox->addItem(QString::fromStdString(filter_item));
@@ -29,6 +34,21 @@ static void add_filters_to_combobox(obs_source_t *parent, obs_source_t *filter, 
 	// data->comboBox->addItem(filter_item.c_str());
 }
 
+=======
+	data->comboBox->addItem(filter_item.c_str());
+
+	return true; // Continue enumeration
+}
+
+// OBS expects a callback with C linkage and a parent/filter/param signature.
+// Provide a C-linkage wrapper that forwards to our helper to ensure the
+// function pointer types match exactly (calling convention / linkage).
+extern "C" static bool obs_filters_enum_wrapper(obs_source_t *parent, obs_source_t *filter, void *param)
+{
+	(void)parent;
+	return add_filters_to_combobox(filter, param);
+}
+>>>>>>> 447361aee4bb23ee57e740b5b3071b51a907c7fe
 
 // add_sources_to_list is a helper function that adds all text and media sources to the list
 bool add_sources_to_combobox(void *list_property, obs_source_t *source)
@@ -60,8 +80,14 @@ bool add_sources_to_combobox(void *list_property, obs_source_t *source)
 	filter_data.comboBox = sources;
 	filter_data.source_name = name;
 	filter_data.source_prefix = name_with_prefix.substr(0, name_with_prefix.find(')') + 2);
+<<<<<<< HEAD
 
 	obs_source_enum_filters(source, add_filters_to_combobox, &filter_data);
 
+=======
+	
+	obs_source_enum_filters(source, obs_filters_enum_wrapper, &filter_data);
+	
+>>>>>>> 447361aee4bb23ee57e740b5b3071b51a907c7fe
 	return true;
 }
